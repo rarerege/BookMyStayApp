@@ -1,104 +1,57 @@
+import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
 
-// Reservation request
-class ReservationRequest {
-    private String guestName;
-    private String roomType;
-
-
-    public ReservationRequest(String guestName, String roomType) {
-        this.guestName = guestName;
-        this.roomType = roomType;
-    }
-
-    public String getGuestName() { return guestName; }
-    public String getRoomType() { return roomType; }
-
-
-}
-
-// Inventory with unique room IDs and thread-safe allocation
-class RoomInventory {
-    private Map<String, Queue<String>> availableRooms = new HashMap<>();
-
+class RoomInventory implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private Map<String, Integer> inventory = new HashMap<>();
 
     public RoomInventory() {
-        availableRooms.put("Single", new LinkedList<>(Arrays.asList("Single-1", "Single-2", "Single-3", "Single-4", "Single-5")));
-        availableRooms.put("Double", new LinkedList<>(Arrays.asList("Double-1", "Double-2")));
-        availableRooms.put("Suite", new LinkedList<>(Arrays.asList("Suite-1")));
+        inventory.put("Single", 5);
+        inventory.put("Double", 3);
+        inventory.put("Suite", 2);
     }
 
-    public synchronized String allocateRoom(String roomType) {
-        Queue<String> rooms = availableRooms.get(roomType);
-        if (rooms != null && !rooms.isEmpty()) {
-            return rooms.poll(); // Remove the first available room
-        }
-        return null; // No rooms available
-    }
-
-    public synchronized int getAvailability(String roomType) {
-        Queue<String> rooms = availableRooms.get(roomType);
-        return rooms == null ? 0 : rooms.size();
-    }
-
-
-}
-
-// Booking task (Runnable)
-class BookingTask implements Runnable {
-    private ReservationRequest request;
-    private RoomInventory inventory;
-
-
-    public BookingTask(ReservationRequest request, RoomInventory inventory) {
-        this.request = request;
-        this.inventory = inventory;
+    public int getAvailability(String roomType) {
+        return inventory.getOrDefault(roomType, 0);
     }
 
     @Override
-    public void run() {
-        String roomId = inventory.allocateRoom(request.getRoomType());
-        if (roomId != null) {
-            System.out.println("Booking confirmed for Guest: " + request.getGuestName() + ", Room ID: " + roomId);
-        } else {
-            System.out.println("Booking failed for Guest: " + request.getGuestName() + " - Room Type unavailable: " + request.getRoomType());
-        }
+    public String toString() {
+        return "Single: " + getAvailability("Single") +
+                "\nDouble: " + getAvailability("Double") +
+                "\nSuite: " + getAvailability("Suite");
     }
-
-
 }
 
-// Main class
 public class BookMyStayApp {
 
+    private static final String FILE_NAME = "hotel_system_state.dat";
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
 
-        RoomInventory inventory = new RoomInventory();
+        RoomInventory inventory;
 
-        // Concurrent booking requests
-        List<ReservationRequest> requests = Arrays.asList(
-                new ReservationRequest("Abhi", "Single"),
-                new ReservationRequest("Vanmathi", "Double"),
-                new ReservationRequest("Kural", "Suite"),
-                new ReservationRequest("Subha", "Single")
-        );
-
-        ExecutorService executor = Executors.newFixedThreadPool(4);
-
-        for (ReservationRequest req : requests) {
-            executor.submit(new BookingTask(req, inventory));
+        // Attempt to load persisted state
+        File file = new File(FILE_NAME);
+        if (!file.exists()) {
+            System.out.println("System Recovery");
+            System.out.println("No valid inventory data found. Starting fresh.\n");
+            inventory = new RoomInventory();
+        } else {
+            // In a full implementation, deserialization would occur here
+            inventory = new RoomInventory();
         }
 
-        executor.shutdown();
-        executor.awaitTermination(5, TimeUnit.SECONDS);
+        // Display current inventory
+        System.out.println("Current Inventory:");
+        System.out.println(inventory);
 
-        System.out.println("\nRemaining Inventory:");
-        System.out.println("Single: " + inventory.getAvailability("Single"));
-        System.out.println("Double: " + inventory.getAvailability("Double"));
-        System.out.println("Suite: " + inventory.getAvailability("Suite"));
+        // Save the initial state
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            oos.writeObject(inventory);
+            System.out.println("Inventory saved successfully.");
+        } catch (IOException e) {
+            System.out.println("Error saving inventory: " + e.getMessage());
+        }
     }
-
-
 }
