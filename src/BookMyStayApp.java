@@ -1,57 +1,92 @@
-import java.io.*;
-import java.util.*;
+/**
+ * UseCase2RoomInitialization
+ *
+ * Demonstrates basic room types using inheritance, static availability, and room sizes.
+ *
+ * @version 2.1
+ */
 
-class RoomInventory implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private Map<String, Integer> inventory = new HashMap<>();
+abstract class Room {
+    protected String roomType;
+    protected int beds;
+    protected int size; // in sqft
+    protected double price;
 
-    public RoomInventory() {
-        inventory.put("Single", 5);
-        inventory.put("Double", 3);
-        inventory.put("Suite", 2);
+    public Room(String roomType, int beds, int size, double price) {
+        this.roomType = roomType;
+        this.beds = beds;
+        this.size = size;
+        this.price = price;
     }
 
-    public int getAvailability(String roomType) {
-        return inventory.getOrDefault(roomType, 0);
+    public abstract void displayDetails();
+}
+
+// Concrete room classes
+class SingleRoom extends Room {
+    public SingleRoom() {
+        super("Single", 1, 250, 1500.0);
     }
 
     @Override
-    public String toString() {
-        return "Single: " + getAvailability("Single") +
-                "\nDouble: " + getAvailability("Double") +
-                "\nSuite: " + getAvailability("Suite");
+    public void displayDetails() {
+        System.out.println("Single Room:");
+        System.out.println("Beds: " + beds);
+        System.out.println("Size: " + size + " sqft");
+        System.out.println("Price per night: " + price);
+        System.out.println("Available: " + BookMyStayApp.singleRoomAvailability + "\n");
+    }
+}
+
+class DoubleRoom extends Room {
+    public DoubleRoom() {
+        super("Double", 2, 400, 2500.0);
+    }
+
+    @Override
+    public void displayDetails() {
+        System.out.println("Double Room:");
+        System.out.println("Beds: " + beds);
+        System.out.println("Size: " + size + " sqft");
+        System.out.println("Price per night: " + price);
+        System.out.println("Available: " + BookMyStayApp.doubleRoomAvailability + "\n");
+    }
+}
+
+class SuiteRoom extends Room {
+    public SuiteRoom() {
+        super("Suite", 3, 750, 5000.0);
+    }
+
+    @Override
+    public void displayDetails() {
+        System.out.println("Suite Room:");
+        System.out.println("Beds: " + beds);
+        System.out.println("Size: " + size + " sqft");
+        System.out.println("Price per night: " + price);
+        System.out.println("Available: " + BookMyStayApp.suiteRoomAvailability + "\n");
     }
 }
 
 public class BookMyStayApp {
 
-    private static final String FILE_NAME = "hotel_system_state.dat";
+    // Make static availability variables public
+    public static int singleRoomAvailability = 5;
+    public static int doubleRoomAvailability = 3;
+    public static int suiteRoomAvailability = 2;
 
     public static void main(String[] args) {
 
-        RoomInventory inventory;
+        System.out.println("Hotel Room Initialization\n");
 
-        // Attempt to load persisted state
-        File file = new File(FILE_NAME);
-        if (!file.exists()) {
-            System.out.println("System Recovery");
-            System.out.println("No valid inventory data found. Starting fresh.\n");
-            inventory = new RoomInventory();
-        } else {
-            // In a full implementation, deserialization would occur here
-            inventory = new RoomInventory();
-        }
+        // Create room objects
+        Room single = new SingleRoom();
+        Room doubleRoom = new DoubleRoom();
+        Room suite = new SuiteRoom();
 
-        // Display current inventory
-        System.out.println("Current Inventory:");
-        System.out.println(inventory);
-
-        // Save the initial state
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
-            oos.writeObject(inventory);
-            System.out.println("Inventory saved successfully.");
-        } catch (IOException e) {
-            System.out.println("Error saving inventory: " + e.getMessage());
-        }
+        // Display room details
+        single.displayDetails();
+        doubleRoom.displayDetails();
+        suite.displayDetails();
     }
 }
