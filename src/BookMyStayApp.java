@@ -1,7 +1,6 @@
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
-// Reservation class
+// Reservation request
 class Reservation {
     private String guestName;
     private String roomType;
@@ -12,39 +11,84 @@ class Reservation {
         this.roomType = roomType;
     }
 
-    public String getGuestName() {
-        return guestName;
+    public String getGuestName() { return guestName; }
+    public String getRoomType() { return roomType; }
+
+}
+
+// Centralized inventory
+class RoomInventory {
+    private Map<String, Integer> inventory;
+
+
+    public RoomInventory() {
+        inventory = new HashMap<>();
+        inventory.put("Single", 2); // initial availability
+        inventory.put("Double", 2);
+        inventory.put("Suite", 1);
     }
 
-    public String getRoomType() {
-        return roomType;
+    public boolean isAvailable(String roomType) {
+        return inventory.getOrDefault(roomType, 0) > 0;
+    }
+
+    public void allocateRoom(String roomType) {
+        int current = inventory.getOrDefault(roomType, 0);
+        if (current > 0) {
+            inventory.put(roomType, current - 1);
+        }
     }
 
 }
 
-// Booking Queue
+// Booking queue
 class BookingRequestQueue {
     private Queue<Reservation> queue;
+
 
     public BookingRequestQueue() {
         queue = new LinkedList<>();
     }
 
-    // Add request
-    public void addRequest(Reservation reservation) {
-        queue.offer(reservation);
+    public void addRequest(Reservation r) { queue.offer(r); }
+    public Reservation pollRequest() { return queue.poll(); }
+    public boolean isEmpty() { return queue.isEmpty(); }
+
+}
+
+// Booking service
+class BookingService {
+    private RoomInventory inventory;
+    private Map<String, Integer> roomCounters; // per room type counter
+
+
+    public BookingService(RoomInventory inventory) {
+        this.inventory = inventory;
+        roomCounters = new HashMap<>();
     }
 
-    // Process requests in FIFO order
-    public void processRequests() {
-        System.out.println("Booking Request Queue");
+    public void processReservation(Reservation r) {
+        String type = r.getRoomType();
 
+        if (inventory.isAvailable(type)) {
+            // Generate room ID: <RoomType>-<number>
+            int count = roomCounters.getOrDefault(type, 0) + 1;
+            roomCounters.put(type, count);
+            String roomId = type + "-" + count;
+
+            // Allocate room (decrement inventory)
+            inventory.allocateRoom(type);
+
+            // Confirm reservation
+            System.out.println("Booking confirmed for Guest: " + r.getGuestName()
+                    + ", Room ID: " + roomId);
+        }
+    }
+
+    public void processQueue(BookingRequestQueue queue) {
         while (!queue.isEmpty()) {
-            Reservation r = queue.poll(); // removes in FIFO order
-            System.out.println("Processing booking for Guest: "
-                    + r.getGuestName()
-                    + ", Room Type: "
-                    + r.getRoomType());
+            Reservation r = queue.pollRequest();
+            processReservation(r);
         }
     }
 
@@ -57,15 +101,18 @@ public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        BookingRequestQueue bookingQueue = new BookingRequestQueue();
+        RoomInventory inventory = new RoomInventory();
+        BookingRequestQueue requestQueue = new BookingRequestQueue();
 
-        // Add requests (arrival order)
-        bookingQueue.addRequest(new Reservation("Abhi", "Single"));
-        bookingQueue.addRequest(new Reservation("Subha", "Double"));
-        bookingQueue.addRequest(new Reservation("Vanmathi", "Suite"));
+        // Add requests
+        requestQueue.addRequest(new Reservation("Abhi", "Single"));
+        requestQueue.addRequest(new Reservation("Subha", "Single"));
+        requestQueue.addRequest(new Reservation("Vanmathi", "Suite"));
 
-        // Process queue
-        bookingQueue.processRequests();
+        // Process bookings
+        BookingService service = new BookingService(inventory);
+        service.processQueue(requestQueue);
     }
+
 
 }
