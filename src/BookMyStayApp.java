@@ -1,79 +1,29 @@
-import java.util.*;
+import java.util.Scanner;
 
-// Reservation class
-class Reservation {
-    private String guestName;
-    private String roomType;
-
-
-    public Reservation(String guestName, String roomType) {
-        this.guestName = guestName;
-        this.roomType = roomType;
-    }
-
-    public String getGuestName() { return guestName; }
-    public String getRoomType() { return roomType; }
-
-
-}
-
-// Booking History
-class BookingHistory {
-    private List<Reservation> history;
-
-
-    public BookingHistory() {
-        history = new ArrayList<>();
-    }
-
-    public void addReservation(Reservation r) {
-        history.add(r);
-    }
-
-    public List<Reservation> getAllReservations() {
-        return Collections.unmodifiableList(history);
-    }
-
-
-}
-
-// Reporting Service
-class BookingReportService {
-    private BookingHistory history;
-
-
-    public BookingReportService(BookingHistory history) {
-        this.history = history;
-    }
-
-    public void generateReport() {
-        System.out.println("Booking History and Reporting");
-        System.out.println("Booking History Report");
-
-        for (Reservation r : history.getAllReservations()) {
-            System.out.println("Guest: " + r.getGuestName() + ", Room Type: " + r.getRoomType());
-        }
-    }
-
-
-}
-
-// Main class
 public class BookMyStayApp {
 
 
     public static void main(String[] args) {
 
-        BookingHistory bookingHistory = new BookingHistory();
-        BookingReportService reportService = new BookingReportService(bookingHistory);
+        Scanner sc = new Scanner(System.in);
 
-        // Simulate confirmed bookings
-        bookingHistory.addReservation(new Reservation("Abhi", "Single"));
-        bookingHistory.addReservation(new Reservation("Subha", "Double"));
-        bookingHistory.addReservation(new Reservation("Vanmathi", "Suite"));
+        System.out.println("Booking Validation");
 
-        // Generate report
-        reportService.generateReport();
+        System.out.print("Enter guest name: ");
+        String guestName = sc.nextLine();
+
+        System.out.print("Enter room type (Single/Double/Suite): ");
+        String roomType = sc.nextLine();
+
+        // Validate room type (case-sensitive)
+        if (!roomType.equals("Single") && !roomType.equals("Double") && !roomType.equals("Suite")) {
+            System.out.println("Booking failed: Invalid room type selected.");
+        } else {
+            System.out.println("Booking successful for Guest: " + guestName
+                    + ", Room Type: " + roomType);
+        }
+
+        sc.close();
     }
 
 
